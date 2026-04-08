@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: lms_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lms_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  lms-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lms_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: on-failure:5
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      [
+        "/app/lms_service",
+        "--config", "/app/configs/static_config.yaml",
+        "--config_vars", "/app/configs/config_vars.yaml"
+      ]
+
+volumes:
+  postgres_data:

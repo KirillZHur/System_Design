@@ -1,0 +1,142 @@
+components_manager:
+    task_processors:
+        main-task-processor:
+            worker_threads: $worker-threads
+
+        fs-task-processor:
+            worker_threads: $worker-fs-threads
+
+    default_task_processor: main-task-processor
+
+    components:
+        server:
+            listener:
+                port: $server-port
+                task_processor: main-task-processor
+
+        logging:
+            fs-task-processor: fs-task-processor
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: $logger-level
+                    overflow_behavior: discard
+
+        dynamic-config:
+            defaults:
+                HTTP_CLIENT_CONNECTION_POOL_SIZE: 1000
+
+        testsuite-support: {}
+
+        http-client: {}
+
+        http-client-core:
+            fs-task-processor: fs-task-processor
+
+        dns-client:
+            fs-task-processor: fs-task-processor
+
+        tests-control:
+            load-enabled: $is-testing
+            path: /tests/{action}
+            method: POST
+            task_processor: main-task-processor
+
+        handler-ping:
+            path: /ping
+            method: GET
+            task_processor: main-task-processor
+            throttling_enabled: false
+            url_trailing_slash: strict-match
+
+        in-memory-storage:
+            jwt_secret: $jwt-secret
+
+        postgres-db:
+            dbconnection: $postgres-dsn
+            blocking_task_processor: main-task-processor
+
+        db-cleaner:
+            is-testing: $is-testing
+
+        handler-register:
+            path: /api/v1/auth/register
+            method: POST
+            task_processor: main-task-processor
+
+        handler-login:
+            path: /api/v1/auth/login
+            method: POST
+            task_processor: main-task-processor
+
+        handler-get-user-by-login:
+            path: /api/v1/users/by-login/{login}
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-search-users:
+            path: /api/v1/users/search
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-create-course:
+            path: /api/v1/courses
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-list-courses:
+            path: /api/v1/courses
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-add-lesson:
+            path: /api/v1/courses/{course_id}/lessons
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-list-lessons:
+            path: /api/v1/courses/{course_id}/lessons
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-enroll-user:
+            path: /api/v1/courses/{course_id}/enrollments
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-get-user-courses:
+            path: /api/v1/users/{user_id}/courses
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-mark-lesson-completed:
+            path: /api/v1/lessons/{lesson_id}/progress
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
