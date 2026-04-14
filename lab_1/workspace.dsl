@@ -24,11 +24,15 @@ workspace "LMS" "Система управления обучением"  {
 
       userService = container "User Service" "Сервис регистрации, поиска пользователей, управления учетными записями" "C++ / userver (REST)"
 
-      courseService = container "Course Service" "Сервис создания курсов, получения списка курсов, добавления уроков и получения уроков курса" "C++ / userver (REST)"
+      courseService = container "Course Service" "Сервис создания курсов, получения списка курсов, добавления уроков и получения уроков курса. Данные курсов и уроков хранятся в MongoDB" "C++ / userver (REST)"
 
       enrollmentService = container "Enrollment Service" "Сервис записи пользователей на курсы, получения курсов пользователя и отметки о прохождении уроков" "C++ / userver (REST)"
 
-      db = container "Database" "База данных пользователей, курсов, урокоу, записей на курсы и хранения прогресса уроков" "PostgreSQL" {
+      postgres = container "PostgreSQL" "Реляционная база данных пользователей, записей на курсы и прогресса обучения" "PostgreSQL" {
+        tags "Database"
+      }
+
+      mongo = container "MongoDB" "Документо-ориентированная база данных курсов и уроков" "MongoDB" {
         tags "Database"
       }
 
@@ -52,12 +56,12 @@ workspace "LMS" "Система управления обучением"  {
     lms.apiGateway -> lms.courseService "Маршрутизирует /courses и /lessons" "HTTPS/REST"
     lms.apiGateway -> lms.enrollmentService "Маршрутизирует /enrollments и /progress" "HTTPS/REST"
 
-    lms.userService -> lms.db "Читает и записывает пользователей" "SQL"
+    lms.userService -> lms.postgres "Читает и записывает пользователей" "SQL"
     lms.userService -> emailSystem "Отправляет подтверждение регистрации" "SMTP"
 
-    lms.courseService -> lms.db "Читает и записывает курсы и уроки" "SQL"
+    lms.courseService -> lms.mongo "Читает и записывает курсы и уроки" "NoSQL"
 
-    lms.enrollmentService -> lms.db "Читает и записывает записи на курсы и прогресс обучения" "SQL"
+    lms.enrollmentService -> lms.postgres "Читает и записывает записи на курсы и прогресс обучения" "SQL"
     lms.enrollmentService -> emailSystem "Отправляет уведомление о записи на курс/прохождение урока" "SMTP"
 
   }
@@ -81,7 +85,7 @@ workspace "LMS" "Система управления обучением"  {
       student -> lms.spa "Открывает страницу курса"
       lms.spa -> lms.apiGateway "POST /enrollments (JWT)"
       lms.apiGateway -> lms.enrollmentService "Перенаправляет запрос"
-      lms.enrollmentService -> lms.db "INSERT enrollment"
+      lms.enrollmentService -> lms.postgres "INSERT enrollment"
     }
 
     styles {
