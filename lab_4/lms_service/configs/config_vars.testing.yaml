@@ -1,0 +1,8 @@
+worker-threads: 2
+worker-fs-threads: 2
+logger-level: debug
+is-testing: true
+server-port: 8080
+jwt-secret: lms-service-secret
+postgres-dsn: postgresql://postgres:postgres@host.docker.internal:5432/lms_db
+mongo-dsn: mongodb://host.docker.internal:27017/lms_mongo_db

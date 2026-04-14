@@ -1,0 +1,8 @@
+worker-threads: 4
+worker-fs-threads: 2
+logger-level: info
+is-testing: false
+server-port: 8080
+jwt-secret: lms-service-secret
+postgres-dsn: postgresql://postgres:postgres@postgres:5432/lms_db
+mongo-dsn: mongodb://mongo:27017/lms_mongo_db
