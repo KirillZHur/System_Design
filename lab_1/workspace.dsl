@@ -18,11 +18,11 @@ workspace "LMS" "Система управления обучением"  {
         tags "WebApp"
       }
 
-      apiGateway = container "API Gateway" "Единая точка входа для маршрутизации запросов, проверки JWT" "NGINX / Kong" {
+      apiGateway = container "API Gateway" "Единая точка входа для маршрутизации запросов, проверки JWT и ограничения частоты запросов" "NGINX / Kong" {
         tags "Gateway"
       }
 
-      userService = container "User Service" "Сервис регистрации, поиска пользователей, управления учетными записями" "C++ / userver (REST)"
+      userService = container "User Service" "Сервис регистрации, авторизации, поиска пользователей и управления учетными записями. Реализует кеширование пользователей и rate limiting для авторизации" "C++ / userver (REST)"
 
       courseService = container "Course Service" "Сервис создания курсов, получения списка курсов, добавления уроков и получения уроков курса. Данные курсов и уроков хранятся в MongoDB" "C++ / userver (REST)"
 
@@ -34,6 +34,10 @@ workspace "LMS" "Система управления обучением"  {
 
       mongo = container "MongoDB" "Документо-ориентированная база данных курсов и уроков" "MongoDB" {
         tags "Database"
+      }
+
+      redis = container "Redis" "In-memory key-value хранилище для кеширования часто читаемых данных и хранения счетчиков rate limiting" "Redis" {
+        tags "Cache"
       }
 
     }
@@ -52,11 +56,12 @@ workspace "LMS" "Система управления обучением"  {
 
     lms.spa -> lms.apiGateway "Выполняет API-запросы" "HTTPS/REST"
 
-    lms.apiGateway -> lms.userService "Маршрутизирует /users" "HTTPS/REST"
+    lms.apiGateway -> lms.userService "Маршрутизирует /auth и /users" "HTTPS/REST"
     lms.apiGateway -> lms.courseService "Маршрутизирует /courses и /lessons" "HTTPS/REST"
     lms.apiGateway -> lms.enrollmentService "Маршрутизирует /enrollments и /progress" "HTTPS/REST"
 
     lms.userService -> lms.postgres "Читает и записывает пользователей" "SQL"
+    lms.userService -> lms.redis "Читает/записывает кеш пользователей, результаты поиска и счетчики rate limiting" "Redis protocol"
     lms.userService -> emailSystem "Отправляет подтверждение регистрации" "SMTP"
 
     lms.courseService -> lms.mongo "Читает и записывает курсы и уроки" "NoSQL"
@@ -78,8 +83,29 @@ workspace "LMS" "Система управления обучением"  {
       autolayout lr
     }
 
-    dynamic lms "Add_Student_At_Course" "Запись пользователя на курс" {
+    dynamic lms "Get_User_By_Login_With_Cache" "Получение пользователя по логину с использованием кеша" {
+      autolayout lr
 
+      student -> lms.spa "Открывает профиль пользователя"
+      lms.spa -> lms.apiGateway "GET /users/by-login/{login} (JWT)"
+      lms.apiGateway -> lms.userService "Перенаправляет запрос"
+      lms.userService -> lms.redis "GET user:login:{login}"
+
+      lms.userService -> lms.postgres "SELECT user by login при cache miss"
+      lms.userService -> lms.redis "SET user:login:{login} TTL 300 sec"
+    }
+
+    dynamic lms "Login_With_Rate_Limiting" "Авторизация пользователя с rate limiting" {
+      autolayout lr
+
+      student -> lms.spa "Вводит логин и пароль"
+      lms.spa -> lms.apiGateway "POST /auth/login"
+      lms.apiGateway -> lms.userService "Перенаправляет запрос авторизации"
+      lms.userService -> lms.redis "Проверяет счетчик rate_limit:login:{client}:{window}"
+      lms.userService -> lms.postgres "Проверяет логин и пароль"
+    }
+
+    dynamic lms "Add_Student_At_Course" "Запись пользователя на курс" {
       autolayout lr
 
       student -> lms.spa "Открывает страницу курса"
@@ -121,6 +147,12 @@ workspace "LMS" "Система управления обучением"  {
 
       element "Database" {
         shape cylinder
+      }
+
+      element "Cache" {
+        shape cylinder
+        background #ff8c00
+        color #ffffff
       }
 
     }
