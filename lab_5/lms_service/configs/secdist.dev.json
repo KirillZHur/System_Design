@@ -1,0 +1,18 @@
+{
+  "redis_settings": {
+    "cache-db": {
+      "password": "",
+      "sentinels": [
+        {
+          "host": "host.docker.internal",
+          "port": 6379
+        }
+      ],
+      "shards": [
+        {
+          "name": "test_standalone_master0"
+        }
+      ]
+    }
+  }
+}
