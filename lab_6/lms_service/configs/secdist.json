@@ -1,0 +1,30 @@
+{
+  "redis_settings": {
+    "cache-db": {
+      "password": "",
+      "sentinels": [
+        {
+          "host": "redis",
+          "port": 6379
+        }
+      ],
+      "shards": [
+        {
+          "name": "prod_standalone_master0"
+        }
+      ]
+    }
+  },
+  "kafka_settings": {
+    "kafka-producer": {
+      "brokers": "kafka:9092",
+      "username": "",
+      "password": ""
+    },
+    "kafka-consumer": {
+      "brokers": "kafka:9092",
+      "username": "",
+      "password": ""
+    }
+  }
+}

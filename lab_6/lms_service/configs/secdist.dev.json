@@ -1,0 +1,30 @@
+{
+  "redis_settings": {
+    "cache-db": {
+      "password": "",
+      "sentinels": [
+        {
+          "host": "host.docker.internal",
+          "port": 6379
+        }
+      ],
+      "shards": [
+        {
+          "name": "test_standalone_master0"
+        }
+      ]
+    }
+  },
+  "kafka_settings": {
+    "kafka-producer": {
+      "brokers": "host.docker.internal:29092",
+      "username": "",
+      "password": ""
+    },
+    "kafka-consumer": {
+      "brokers": "host.docker.internal:29092",
+      "username": "",
+      "password": ""
+    }
+  }
+}

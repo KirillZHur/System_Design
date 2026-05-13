@@ -1,0 +1,90 @@
+components_manager:
+    task_processors:
+        main-task-processor:
+            worker_threads: $worker-threads
+
+        fs-task-processor:
+            worker_threads: $worker-fs-threads
+
+        consumer-task-processor:
+            worker_threads: 2
+            thread_name: consumer-worker
+
+        consumer-blocking-task-processor:
+            worker_threads: 2
+            thread_name: kafka-consumer
+
+    default_task_processor: main-task-processor
+
+    components:
+        server:
+            listener:
+                port: 8091
+                task_processor: main-task-processor
+
+        handler-ping:
+            path: /ping
+            method: GET
+            task_processor: main-task-processor
+            throttling_enabled: false
+            url_trailing_slash: strict-match
+
+        logging:
+            fs-task-processor: fs-task-processor
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: $logger-level
+                    overflow_behavior: discard
+
+        dynamic-config:
+            defaults:
+                HTTP_CLIENT_CONNECTION_POOL_SIZE: 1000
+
+        testsuite-support: {}
+
+        http-client: {}
+
+        http-client-core:
+            fs-task-processor: fs-task-processor
+
+        dns-client:
+            fs-task-processor: fs-task-processor
+
+        tests-control:
+            load-enabled: $is-testing
+            path: /tests/{action}
+            method: POST
+            task_processor: main-task-processor
+
+        secdist:
+            provider: default-secdist-provider
+
+        default-secdist-provider:
+            config: $secdist-config
+            missing-ok: false
+
+        postgres-db:
+            dbconnection: $postgres-dsn
+            blocking_task_processor: fs-task-processor
+            dns_resolver: async
+            sync-start: true
+            min_pool_size: 2
+            max_pool_size: 10
+
+        mongo-db:
+            dbconnection: $mongo-dsn
+            conn_timeout: 2s
+            so_timeout: 2s
+            queue_timeout: 1s
+
+        kafka-consumer:
+            group_id: course-consumer-group
+            topics:
+              - lms.course.commands
+            auto_offset_reset: smallest
+            max_batch_size: 10
+            poll_timeout: 500ms
+            security_protocol: PLAINTEXT
+
+        course-commands-consumer: {}

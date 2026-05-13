@@ -1,0 +1,82 @@
+components_manager:
+    task_processors:
+        main-task-processor:
+            worker_threads: $worker-threads
+
+        fs-task-processor:
+            worker_threads: $worker-fs-threads
+
+        producer-task-processor:
+            worker_threads: 2
+            thread_name: producer-worker
+
+    default_task_processor: main-task-processor
+
+    components:
+        server:
+            listener:
+                port: $server-port
+                task_processor: main-task-processor
+
+        logging:
+            fs-task-processor: fs-task-processor
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: $logger-level
+                    overflow_behavior: discard
+
+        dynamic-config:
+            defaults:
+                HTTP_CLIENT_CONNECTION_POOL_SIZE: 1000
+
+        testsuite-support: {}
+
+        http-client: {}
+
+        http-client-core:
+            fs-task-processor: fs-task-processor
+
+        dns-client:
+            fs-task-processor: fs-task-processor
+
+        tests-control:
+            load-enabled: $is-testing
+            path: /tests/{action}
+            method: POST
+            task_processor: main-task-processor
+
+        handler-ping:
+            path: /ping
+            method: GET
+            task_processor: main-task-processor
+            throttling_enabled: false
+            url_trailing_slash: strict-match
+
+        secdist:
+            provider: default-secdist-provider
+
+        default-secdist-provider:
+            config: $secdist-config
+            missing-ok: false
+
+        redis:
+            groups:
+              - config_name: cache-db
+                db: cache-db
+                sharding_strategy: RedisStandalone
+            subscribe_groups: []
+            thread_pools:
+                redis_thread_pool_size: 2
+                sentinel_thread_pool_size: 1
+
+        kafka-producer:
+            delivery_timeout: 10s
+            queue_buffering_max: 100ms
+            enable_idempotence: true
+            security_protocol: PLAINTEXT
+
+        handler-create-course-command:
+            path: /api/v1/courses
+            method: POST
+            task_processor: main-task-processor
